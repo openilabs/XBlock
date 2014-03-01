@@ -1,10 +1,12 @@
 """Provide XBlock urls"""
 
-from django.conf.urls import patterns, url
+from django.conf.urls import include, patterns, url
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.contrib import admin
 
 from workbench.scenarios import init_scenarios
 
+admin.autodiscover()
 
 init_scenarios()
 
@@ -32,6 +34,8 @@ urlpatterns = patterns(
         'package_resource',
         name='package_resource'
     ),
+
+    url(r'^admin/', include(admin.site.urls)),
 )
 
 urlpatterns += staticfiles_urlpatterns()

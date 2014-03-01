@@ -20,12 +20,13 @@ from xblock.fields import Scope, ScopeIds
 from xblock.runtime import KvsFieldData, KeyValueStore, Runtime, NoSuchViewError, MemoryIdManager
 from xblock.fragment import Fragment
 
+from .models import XBlockState
 from .util import make_safe_for_html
 
 log = logging.getLogger(__name__)
 
 
-class WorkbenchKeyValueStore(KeyValueStore):
+class WorkbenchMemoryKeyValueStore(KeyValueStore):
     """A `KeyValueStore` for the Workbench to use.
 
     This is a simple `KeyValueStore` which stores everything in a dictionary.
@@ -34,7 +35,7 @@ class WorkbenchKeyValueStore(KeyValueStore):
 
     """
     def __init__(self, db_dict):
-        super(WorkbenchKeyValueStore, self).__init__()
+        super(WorkbenchMemoryKeyValueStore, self).__init__()
         self.db_dict = db_dict
 
     # Workbench-special methods.
@@ -96,6 +97,81 @@ class WorkbenchKeyValueStore(KeyValueStore):
         for key, value in update_dict.items():
             # We just call `set` directly here, because this is an in-memory representation
             # thus we don't concern ourselves with bulk writes.
+            self.set(key, value)
+
+
+class WorkbenchDjangoKeyValueStore(KeyValueStore):
+    """A Django model backed `KeyValueStore` for the Workbench to use.
+    """
+    # Workbench-special methods.
+    def clear(self):
+        """Clear all data from the store."""
+        XBlockState.objects.delete()
+
+    def as_html(self):
+        """Render the key value store to HTML."""
+        return ""
+
+        #html = json.dumps(self.db_dict, sort_keys=True, indent=4)
+        #return make_safe_for_html(html)
+
+    # Implementation details.
+
+    def _actual_key(self, key):
+        """
+        Constructs the full key name from the given `key`.
+
+        The actual key consists of the scope, block scope id, and user_id.
+
+        """
+        key_list = []
+        if key.scope == Scope.children:
+            key_list.append('children')
+        elif key.scope == Scope.parent:
+            key_list.append('parent')
+        else:
+            key_list.append(key.scope.block.attr_name)
+
+        if key.block_scope_id is not None:
+            key_list.append(key.block_scope_id)
+        if key.user_id:
+            key_list.append(key.user_id)
+        return ".".join(key_list)
+
+    # KeyValueStore methods.
+
+    def get(self, key):
+        record = XBlockState.get_for_key(key)
+        return json.loads(record.state)[key.field_name]
+
+    def set(self, key, value):
+        """Sets the key to the new value"""
+        record = XBlockState.get_for_key(key)
+        state_dict = json.loads(record.state)
+        state_dict[key.field_name] = value
+
+        record.state = json.dumps(state_dict)
+        record.save()
+
+    def delete(self, key):
+        record = XBlockState.get_for_key(key)
+        state_dict = json.loads(record.state)
+        del state_dict[key.field_name]
+        record.state = json.dumps(state_dict)
+        record.save()
+
+    def has(self, key):
+        record = XBlockState.get_for_key(key)
+        state_dict = json.loads(record.state)
+        return key.field_name in state_dict
+
+    def set_many(self, update_dict):
+        """
+        Sets many fields to new values in one call.
+        """
+        for key, value in update_dict.items():
+            # We just call `set` directly here, because Workbench isn't really
+            # about high performance at this point.
             self.set(key, value)
 
 
@@ -246,7 +322,9 @@ class _BlockSet(object):
 
 
 # Our global state (the "database").
-WORKBENCH_KVS = WorkbenchKeyValueStore({})
+# WORKBENCH_KVS = WorkbenchMemoryKeyValueStore({})
+
+WORKBENCH_KVS = WorkbenchDjangoKeyValueStore()
 
 # Our global id manager
 ID_MANAGER = MemoryIdManager()
