@@ -3,7 +3,8 @@
 Code in this file is a mix of Runtime layer and Workbench layer.
 
 """
-
+from collections import defaultdict
+import itertools
 import logging
 
 try:
@@ -17,7 +18,10 @@ from django.template import loader as django_template_loader, \
     Context as DjangoContext
 
 from xblock.fields import Scope, ScopeIds
-from xblock.runtime import KvsFieldData, KeyValueStore, Runtime, NoSuchViewError, MemoryIdManager
+from xblock.runtime import (
+    KvsFieldData, KeyValueStore, Runtime, NoSuchViewError, MemoryIdManager,
+    IdReader, IdGenerator
+)
 from xblock.fragment import Fragment
 
 from .models import XBlockState
@@ -106,7 +110,7 @@ class WorkbenchDjangoKeyValueStore(KeyValueStore):
     # Workbench-special methods.
     def clear(self):
         """Clear all data from the store."""
-        XBlockState.objects.delete()
+        XBlockState.objects.all().delete()
 
     def as_html(self):
         """Render the key value store to HTML."""
@@ -308,14 +312,74 @@ class _BlockSet(object):
                 yield getattr(block, attr_name)
 
 
+class SlugIdManager(IdReader, IdGenerator):
+    """A simple dict-based implementation of IdReader and IdGenerator."""
+
+    def __init__(self):
+        self._block_types_to_id_seq = defaultdict(itertools.count)
+        self._def_ids_to_id_seq = defaultdict(itertools.count)
+        self._usages = {}
+        self._definitions = {}
+
+    def _next_def_id(self, prefix):
+        """Generate a new id."""
+        id_seq = self._block_types_to_id_seq[prefix]
+        return "{}.d{}".format(prefix, next(id_seq))
+
+    def _next_usage_id(self, def_id):
+        """Generate a new id."""
+        id_seq = self._def_ids_to_id_seq[def_id]
+        return "{}.u{}".format(def_id, next(id_seq))
+
+    def clear(self):
+        """Remove all entries."""
+        self._usages.clear()
+        self._definitions.clear()
+
+    def create_usage(self, def_id):
+        """Make a usage, storing its definition id."""
+        # usage_id = self._next_id("u")
+
+        usage_id = self._next_usage_id(def_id)
+        self._usages[usage_id] = def_id
+        return usage_id
+
+    def get_definition_id(self, usage_id):
+        """Get a definition_id by its usage id."""
+        try:
+            return self._usages[usage_id]
+        except KeyError:
+            raise NoSuchUsage(repr(usage_id))
+
+    def create_definition(self, block_type, slug=None):
+        """Make a definition, storing its block type."""
+        # prefix = "d"
+        prefix = ""
+        if block_type:
+            prefix += block_type
+        if slug:
+            prefix += "." + slug
+
+        def_id = self._next_def_id(prefix)
+        self._definitions[def_id] = block_type
+        return def_id
+
+    def get_block_type(self, def_id):
+        """Get a block_type by its definition id."""
+        try:
+            return self._definitions[def_id]
+        except KeyError:
+            raise NoSuchDefinition(repr(def_id))
+
 # Our global state (the "database").
 # WORKBENCH_KVS = WorkbenchMemoryKeyValueStore({})
 
 WORKBENCH_KVS = WorkbenchDjangoKeyValueStore()
 
 # Our global id manager
-ID_MANAGER = MemoryIdManager()
+# ID_MANAGER = MemoryIdManager()
 
+ID_MANAGER = SlugIdManager()
 
 def reset_global_state():
     """

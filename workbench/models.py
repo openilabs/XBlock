@@ -2,31 +2,37 @@ from django.db import models
 
 from xblock.fields import BlockScope, Scope, UserScope
 
+def shorten_scope_name(scope_name):
+    prefix, rest = scope_name.split("_", 1)
+    return rest
+
 BLOCK_SCOPE_NAMES = [
-    (sentinel.attr_name, sentinel.attr_name)
+    (shorten_scope_name(sentinel.attr_name), shorten_scope_name(sentinel.attr_name))
     for sentinel in BlockScope.scopes() + [Scope.parent, Scope.children]
 ]
 
 class XBlockState(models.Model):
     # Not really a block_scope... block or child/parent... :-(
-    block_scope = models.CharField(
+    scope = models.CharField(
         max_length=50,
         blank=True,
         null=True,
         db_index=True,
         choices=BLOCK_SCOPE_NAMES
     )
-    block_scope_id = models.CharField(
+    scope_id = models.CharField(
         max_length=255,
         blank=True,
         null=True,
         db_index=True,
+        verbose_name="Scope ID",
     )
     user_id = models.CharField(
         max_length=255,
         blank=True,
         null=True,
         db_index=True,
+        verbose_name="User ID",
     )
 
     state = models.TextField(default="{}")
@@ -38,13 +44,17 @@ class XBlockState(models.Model):
         else:
             block_scope_name = key.scope.block.attr_name
 
+        block_scope_name = shorten_scope_name(block_scope_name)
+
         record, _ = cls.objects.get_or_create(
-            block_scope=block_scope_name,
-            block_scope_id=key.block_scope_id,
+            scope=block_scope_name,
+            scope_id=key.block_scope_id,
             user_id=key.user_id,
         )
         return record
 
 
     class Meta:
+        verbose_name = "XBlock State"
+        verbose_name_plural = "XBlock State"
         ordering = ['-id']

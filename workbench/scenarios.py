@@ -57,7 +57,7 @@ def init_scenarios():
     # Clear any existing scenarios, since this is used repeatedly during testing.
     SCENARIOS.clear()
 
-    XBlockState.objects.filter(block_scope="scope_children").delete()
+    XBlockState.objects.filter(scope="children").delete()
 
     # Get all the XBlock classes, and add their scenarios.
     for class_name, cls in sorted(XBlock.load_classes()):

@@ -30,11 +30,11 @@ def setup_logging():
     global LOG_STREAM
     LOG_STREAM = StringIO()
 
-    root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG)
-    log_handler = logging.StreamHandler(LOG_STREAM)
-    log_handler.setFormatter(logging.Formatter("<p>%(asctime)s %(name)s %(levelname)s: %(message)s</p>"))
-    root_logger.addHandler(log_handler)
+    # root_logger = logging.getLogger()
+    # root_logger.setLevel(logging.DEBUG)
+    # log_handler = logging.StreamHandler(LOG_STREAM)
+    # log_handler.setFormatter(logging.Formatter("<p>%(asctime)s %(name)s %(levelname)s: %(message)s</p>"))
+    # root_logger.addHandler(log_handler)
 
 setup_logging()
 

@@ -3,11 +3,11 @@ from .models import XBlockState
 
 class XBlockStateAdmin(admin.ModelAdmin):
     list_display = (
-        'block_scope_id', 'block_scope', 'user_id', 'state'
+        'scope_id', 'scope', 'user_id', 'state'
     )
-    list_filter = ['block_scope', 'user_id']
+    list_filter = ['scope', 'user_id']
 
-    search_fields = ['user_id', 'block_scope_id', 'state']
+    search_fields = ['user_id', 'scope_id', 'state']
 
     #def state_preview(self, obj):
     #    return obj.state[:120]
