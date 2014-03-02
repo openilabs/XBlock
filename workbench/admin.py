@@ -3,14 +3,14 @@ from .models import XBlockState
 
 class XBlockStateAdmin(admin.ModelAdmin):
     list_display = (
-        'block_scope_id', 'block_scope', 'user_id', 'state_preview'
+        'block_scope_id', 'block_scope', 'user_id', 'state'
     )
-    list_filter = ['block_scope']
+    list_filter = ['block_scope', 'user_id']
 
-    search_fields = ['user_id', 'block_scope_id']
+    search_fields = ['user_id', 'block_scope_id', 'state']
 
-    def state_preview(self, obj):
-        return obj.state[:100]
+    #def state_preview(self, obj):
+    #    return obj.state[:120]
 
     # def scores(self, obj):
     #     return ", ".join(

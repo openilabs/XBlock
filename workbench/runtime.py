@@ -112,11 +112,7 @@ class WorkbenchDjangoKeyValueStore(KeyValueStore):
         """Render the key value store to HTML."""
         return ""
 
-        #html = json.dumps(self.db_dict, sort_keys=True, indent=4)
-        #return make_safe_for_html(html)
-
     # Implementation details.
-
     def _actual_key(self, key):
         """
         Constructs the full key name from the given `key`.
@@ -150,7 +146,7 @@ class WorkbenchDjangoKeyValueStore(KeyValueStore):
         state_dict = json.loads(record.state)
         state_dict[key.field_name] = value
 
-        record.state = json.dumps(state_dict)
+        record.state = json.dumps(state_dict, indent=2, sort_keys=True)
         record.save()
 
     def delete(self, key):
@@ -164,15 +160,6 @@ class WorkbenchDjangoKeyValueStore(KeyValueStore):
         record = XBlockState.get_for_key(key)
         state_dict = json.loads(record.state)
         return key.field_name in state_dict
-
-    def set_many(self, update_dict):
-        """
-        Sets many fields to new values in one call.
-        """
-        for key, value in update_dict.items():
-            # We just call `set` directly here, because Workbench isn't really
-            # about high performance at this point.
-            self.set(key, value)
 
 
 class WorkbenchRuntime(Runtime):
