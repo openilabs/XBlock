@@ -9,6 +9,7 @@ from collections import namedtuple
 from xblock.core import XBlock
 
 from .runtime import WorkbenchRuntime
+from .models import XBlockState
 
 # Build the scenarios, which are named trees of usages.
 
@@ -56,6 +57,8 @@ def init_scenarios():
     # Clear any existing scenarios, since this is used repeatedly during testing.
     SCENARIOS.clear()
 
+    XBlockState.objects.filter(block_scope="scope_children").delete()
+
     # Get all the XBlock classes, and add their scenarios.
-    for class_name, cls in XBlock.load_classes():
+    for class_name, cls in sorted(XBlock.load_classes()):
         add_class_scenarios(class_name, cls)
