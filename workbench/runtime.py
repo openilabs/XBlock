@@ -320,6 +320,7 @@ class SlugIdManager(IdReader, IdGenerator):
         self._def_ids_to_id_seq = defaultdict(itertools.count)
         self._usages = {}
         self._definitions = {}
+        self.scenario = ""
 
     def _next_def_id(self, prefix):
         """Generate a new id."""
@@ -354,9 +355,7 @@ class SlugIdManager(IdReader, IdGenerator):
     def create_definition(self, block_type, slug=None):
         """Make a definition, storing its block type."""
         # prefix = "d"
-        prefix = ""
-        if block_type:
-            prefix += block_type
+        prefix = "{}.{}".format(self.scenario, block_type)
         if slug:
             prefix += "." + slug
 
@@ -370,6 +369,9 @@ class SlugIdManager(IdReader, IdGenerator):
             return self._definitions[def_id]
         except KeyError:
             raise NoSuchDefinition(repr(def_id))
+
+    def set_scenario(self, scenario):
+        self.scenario = scenario
 
 # Our global state (the "database").
 # WORKBENCH_KVS = WorkbenchMemoryKeyValueStore({})

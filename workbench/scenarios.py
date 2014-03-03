@@ -6,6 +6,8 @@ This code is in the Workbench layer.
 
 from collections import namedtuple
 
+from django.template.defaultfilters import slugify
+
 from xblock.core import XBlock
 
 from .runtime import WorkbenchRuntime
@@ -28,8 +30,11 @@ def add_xml_scenario(scname, description, xml):
     # WorkbenchRuntime has an id_generator, but most runtimes won't
     # (because the generator will be contextual), so we
     # pass it explicitly to parse_xml_string.
+    runtime.id_generator.set_scenario(slugify(description))
     usage_id = runtime.parse_xml_string(xml, runtime.id_generator)
     SCENARIOS[scname] = Scenario(description, usage_id)
+
+    print scname
 
 
 def remove_scenario(scname):

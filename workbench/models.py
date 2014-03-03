@@ -34,6 +34,18 @@ class XBlockState(models.Model):
         db_index=True,
         verbose_name="User ID",
     )
+    scenario = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        db_index=True,
+    )
+    tag = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        db_index=True,
+    )
 
     state = models.TextField(default="{}")
 
@@ -46,10 +58,14 @@ class XBlockState(models.Model):
 
         block_scope_name = shorten_scope_name(block_scope_name)
 
+        scope_id = key.block_scope_id
+        scenario, tag, rest = scope_id.split(".", 2)
         record, _ = cls.objects.get_or_create(
             scope=block_scope_name,
             scope_id=key.block_scope_id,
             user_id=key.user_id,
+            scenario=scenario,
+            tag=tag,
         )
         return record
 
@@ -57,4 +73,4 @@ class XBlockState(models.Model):
     class Meta:
         verbose_name = "XBlock State"
         verbose_name_plural = "XBlock State"
-        ordering = ['-id']
+        ordering = ['scope_id', 'scope', 'user_id']
