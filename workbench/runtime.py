@@ -22,6 +22,7 @@ from xblock.runtime import (
     KvsFieldData, KeyValueStore, Runtime, NoSuchViewError, MemoryIdManager,
     IdReader, IdGenerator
 )
+from xblock.exceptions import NoSuchDefinition, NoSuchUsage
 from xblock.fragment import Fragment
 
 from .models import XBlockState
